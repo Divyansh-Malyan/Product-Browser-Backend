@@ -10,7 +10,7 @@ The goal was to build a backend that can efficiently browse around **200,000 pro
 
 **Render**
 
-`[<Your Render URL>](https://product-browser-backend-q8h4.onrender.com`
+`https://product-browser-backend-q8h4.onrender.com`
 
 ---
 
