@@ -1,57 +1,133 @@
 # Product Browser Backend
 
-This project was built as part of the CodeVector Backend Internship assignment.
+## Live Demo
 
-The goal was to build a backend that can efficiently browse around **200,000 products**, filter them by category, and paginate through them while keeping the results consistent even if new products are added or updated during browsing.
+### Frontend 
 
----
+https://product-browser-frontend-konnx9kl9.vercel.app/
 
-## Live API
+### Backend API
 
-**Render**
-
-`https://product-browser-backend-q8h4.onrender.com`
+https://product-browser-backend-q8h4.onrender.com
 
 ---
 
-## Tech Stack
+## About
+
+This project was built as part of the **CodeVector Backend Internship Assignment**.
+
+The goal was to build a backend that can efficiently browse around **200,000 products**, filter them by category, and paginate through them while keeping pagination fast and consistent.
+
+Instead of using traditional offset pagination, this project uses **cursor (keyset) pagination** to avoid duplicate or missing products when new products are added or updated while users are browsing.
+
+A simple React frontend is also included as a bonus to demonstrate the API.
+
+---
+
+# Features
+
+* Browse products (newest first)
+* Filter products by category
+* Cursor-based pagination
+* Configurable page size (maximum 50)
+* SQL schema script
+* SQL seed script to generate approximately 200,000 products
+* Responsive frontend (Bonus)
+
+---
+
+# Tech Stack
+
+### Backend
 
 * Node.js
 * Express.js
 * PostgreSQL (Supabase)
 * pg
-* Render
+
+### Frontend
+
+* React
+* Vite
+* Axios
+
+### Deployment
+
+* Backend: Render
+* Database: Supabase
+* Frontend: Vercel
 
 ---
 
-## Features
+# How it Works
 
-* Browse products (newest first)
-* Filter products by category
-* Cursor-based pagination
-* Supports up to 50 products per request
-* Seed script to generate around 200,000 products
-* SQL schema included
+1. The client requests products from the backend.
 
----
+2. The backend queries PostgreSQL using cursor pagination.
 
-## Why I used Cursor Pagination
+3. Products are returned ordered by:
 
-Initially, I looked into offset pagination because it's simple to implement. After reading about the assignment requirements, I realized it wouldn't be the right choice.
-
-With a large dataset, offset pagination becomes slower as the page number increases. It can also return duplicate or missing products if new records are added while a user is browsing.
-
-To avoid those problems, I used **cursor (keyset) pagination** based on:
-
-```text
-(updated_at, id)
+```
+updated_at DESC, id DESC
 ```
 
-Using both fields keeps the ordering stable, even when multiple products have the same timestamp.
+4. The response also includes:
+
+* hasMore
+* nextCursor
+
+5. The frontend uses `nextCursor` to request the next page when the user clicks **Load More**.
 
 ---
 
-## Database
+# API
+
+## GET /products
+
+### Query Parameters
+
+| Parameter | Description                                             |
+| --------- | ------------------------------------------------------- |
+| limit     | Number of products to return (default: 20, maximum: 50) |
+| category  | Filter products by category                             |
+| cursor    | Cursor received from the previous response              |
+
+### Example Requests
+
+```
+GET /products
+
+GET /products?limit=20
+
+GET /products?category=Electronics
+
+GET /products?cursor=<nextCursor>
+```
+
+### Success Response
+
+```json
+{
+  "success": true,
+  "count": 20,
+  "hasMore": true,
+  "nextCursor": "...",
+  "products": [...]
+}
+```
+
+### Error Response
+
+```json
+{
+  "success": false,
+  "message": "Invalid cursor format"
+}
+```
+
+---
+
+# Database
 
 Each product contains:
 
@@ -62,71 +138,77 @@ Each product contains:
 * created_at
 * updated_at
 
-To keep the queries fast, I created indexes on:
-
-```sql
-(updated_at DESC, id DESC)
-```
-
-and
-
-```sql
-(category, updated_at DESC, id DESC)
-```
-
-These indexes help PostgreSQL quickly return the newest products and category-filtered products.
+Approximately **200,000 products** are generated using the included SQL seed script.
 
 ---
 
-## API
+# Performance
 
-### Get Products
+To keep pagination fast, the following indexes are created:
 
-```http
-GET /products
+```sql
+CREATE INDEX idx_products_updated
+ON products(updated_at DESC, id DESC);
+
+CREATE INDEX idx_products_category_updated
+ON products(category, updated_at DESC, id DESC);
 ```
 
-### Query Parameters
+Cursor pagination is implemented using:
 
-| Parameter | Description                               |
-| --------- | ----------------------------------------- |
-| limit     | Number of products (default 20, max 50)   |
-| category  | Filter by category                        |
-| cursor    | Cursor returned from the previous request |
+```
+(updated_at, id)
+```
 
-Example:
+This allows PostgreSQL to efficiently continue from the last product of the previous page instead of scanning skipped rows like offset pagination.
 
-```http
-GET /products?limit=20
+---
 
-GET /products?category=Electronics
+# Project Structure
 
-GET /products?cursor=<nextCursor>
+```
+codevector-assignment-backend/
+
+│
+├── database/
+│   ├── schema.sql
+│   └── seed.sql
+│
+├── src/
+│   ├── config/
+│   ├── controllers/
+│   ├── models/
+│   ├── routes/
+│   ├── scripts/
+│   └── server.js
+│
+├── package.json
+└── README.md
 ```
 
 ---
 
-## Running the Project
+# Setup Instructions
 
-Install dependencies
+## Install dependencies
 
 ```bash
 npm install
 ```
 
-Create the database schema
+## Create database schema
 
 ```bash
 npm run schema
 ```
 
-Generate sample data
+## Seed the database
 
 ```bash
 npm run seed
 ```
 
-Start the server
+## Start the server
 
 ```bash
 npm start
@@ -134,42 +216,23 @@ npm start
 
 ---
 
-## Project Structure
+# Design Decisions
 
-```text
-src
-│
-├── config
-├── controllers
-├── models
-├── routes
-├── scripts
-└── server.js
-```
+* Used PostgreSQL because it provides excellent support for indexing and cursor-based pagination.
+* Used parameterized SQL queries to prevent SQL injection.
+* Used MVC architecture to keep the project organized.
+* Used SQL to generate the sample data instead of inserting products one by one for better performance.
+* Used cursor pagination instead of offset pagination to keep pagination efficient and consistent while data changes.
 
 ---
 
-## If I had more time
+# Future Improvements
 
-A few things I'd add are:
+With more time, I would add:
 
 * Search by product name
-* Sorting by price
-* Unit and integration tests
-* Swagger API documentation
+* Sorting by different fields
+* Automated tests
+* Swagger/OpenAPI documentation
 * Docker support
-* Better request logging
-
----
-
-## Bonus
-
-I also built a small React frontend to test and demonstrate the API. It wasn't the main focus of the assignment, but it makes it easier to browse the products and verify the pagination.
-
----
-
-## AI Usage
-
-I used AI as a development assistant during the project. It helped me explore different approaches, review implementation ideas, and debug a few issues during development and deployment.
-
-I made sure to understand every part of the solution before using it. I also tested the implementation myself and fixed issues that came up, especially around cursor pagination, SQL queries, and deployment.
+* Request logging and monitoring
