@@ -4,7 +4,7 @@
 
 ### Frontend 
 
-https://product-browser-frontend-konnx9kl9.vercel.app/
+https://product-browser-frontend-rouge.vercel.app/
 
 ### Backend API
 
