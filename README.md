@@ -20,7 +20,7 @@ The goal was to build a backend that can efficiently browse around **200,000 pro
 
 Instead of using traditional offset pagination, this project uses **cursor (keyset) pagination** to avoid duplicate or missing products when new products are added or updated while users are browsing.
 
-A simple React frontend is also included as a bonus to demonstrate the API.
+A simple React frontend to demonstrate the API.
 
 ---
 
@@ -32,7 +32,7 @@ A simple React frontend is also included as a bonus to demonstrate the API.
 * Configurable page size (maximum 50)
 * SQL schema script
 * SQL seed script to generate approximately 200,000 products
-* Responsive frontend (Bonus)
+* Responsive frontend
 
 ---
 
